@@ -1,9 +1,13 @@
 const express = require('express')
+const morgan = require('morgan')
+
 const app = express()
 
 const PORT = 3001
 
 app.use(express.json())
+app.use(morgan('tiny'))
+
 
 const persons = [
   { id: 1, name: 'Ada Lovelace', number: '39-44-5323523' },
@@ -14,7 +18,14 @@ const persons = [
 
 // ID generaattori
 const generateId = () => {
-  return Math.floor(Math.random() * 1000000)
+  let id = Math.floor(Math.random() * 1000000)
+
+  // Varmistetaan, ettei ID ole jo käytössä
+  while (persons.some(person => person.id === id)) {
+    id = Math.floor(Math.random() * 1000000)
+  }
+
+  return id
 }
 
 // STEP 3.2 - info
@@ -28,10 +39,10 @@ app.get('/info', (req, res) => {
   `)
 })
 
-// STEP 3.3 - hae yksi henkilö
+// STEP 3.3 - hae yksi henkilö ID:n perusteella
 app.get('/api/persons/:id', (req, res) => {
   const id = Number(req.params.id)
-  const person = persons.find(p => p.id === id)
+  const person = persons.find(person => person.id === id)
 
   if (person) {
     res.json(person)
@@ -40,30 +51,46 @@ app.get('/api/persons/:id', (req, res) => {
   }
 })
 
-// GET kaikki
+// GET kaikki henkilöt
 app.get('/api/persons', (req, res) => {
   res.json(persons)
 })
 
-// STEP 3.5 & 3.6 - lisää uusi + validointi
+// STEP 3.4 - poista henkilö
+app.delete('/api/persons/:id', (req, res) => {
+  const id = Number(req.params.id)
+  const personIndex = persons.findIndex(person => person.id === id)
+
+  if (personIndex === -1) {
+    return res.status(404).end()
+  }
+
+  persons.splice(personIndex, 1)
+
+  res.status(204).end()
+})
+
+// STEP 3.5 & 3.6 - lisää uusi henkilö + validointi
 app.post('/api/persons', (req, res) => {
   const body = req.body
 
-  // puuttuva data
+  // Tarkistetaan, että nimi ja numero löytyvät
   if (!body.name || !body.number) {
     return res.status(400).json({
       error: 'name or number missing'
     })
   }
 
-  // uniikki nimi
-  const nameExists = persons.some(p => p.name === body.name)
+  // Tarkistetaan, ettei nimi ole jo käytössä
+  const nameExists = persons.some(person => person.name === body.name)
+
   if (nameExists) {
     return res.status(400).json({
       error: 'name must be unique'
     })
   }
 
+  // Luodaan uusi henkilö
   const person = {
     id: generateId(),
     name: body.name,
@@ -71,9 +98,11 @@ app.post('/api/persons', (req, res) => {
   }
 
   persons.push(person)
+
   res.json(person)
 })
 
+// Käynnistetään palvelin
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })

@@ -1,26 +1,27 @@
 const express = require('express')
 const morgan = require('morgan')
+const cors = require('cors')
 
 const app = express()
 
 const PORT = 3001
 
 app.use(express.json())
+app.use(cors())
 app.use(morgan('tiny'))
-
 
 const persons = [
   { id: 1, name: 'Ada Lovelace', number: '39-44-5323523' },
   { id: 2, name: 'Dan Abramov', number: '12-43-234345' },
   { id: 3, name: 'Mary Poppendieck', number: '39-23-6423122' },
-  { id: 4, name: 'Alan Turing', number: '44-23-6423122' }
+  { id: 4, name: 'Alan Turing', number: '44-23-6423122' }, 
+  { id: 5, name: 'Jack Daniels', number: '49-75-1403128' } 
 ]
 
 // ID generaattori
 const generateId = () => {
   let id = Math.floor(Math.random() * 1000000)
 
-  // Varmistetaan, ettei ID ole jo käytössä
   while (persons.some(person => person.id === id)) {
     id = Math.floor(Math.random() * 1000000)
   }
@@ -28,7 +29,7 @@ const generateId = () => {
   return id
 }
 
-// STEP 3.2 - info
+// Info
 app.get('/info', (req, res) => {
   const count = persons.length
   const date = new Date()
@@ -39,7 +40,7 @@ app.get('/info', (req, res) => {
   `)
 })
 
-// STEP 3.3 - hae yksi henkilö ID:n perusteella
+// Hae yksi henkilö
 app.get('/api/persons/:id', (req, res) => {
   const id = Number(req.params.id)
   const person = persons.find(person => person.id === id)
@@ -51,12 +52,12 @@ app.get('/api/persons/:id', (req, res) => {
   }
 })
 
-// GET kaikki henkilöt
+// Hae kaikki henkilöt
 app.get('/api/persons', (req, res) => {
   res.json(persons)
 })
 
-// STEP 3.4 - poista henkilö
+// Poista henkilö
 app.delete('/api/persons/:id', (req, res) => {
   const id = Number(req.params.id)
   const personIndex = persons.findIndex(person => person.id === id)
@@ -70,18 +71,18 @@ app.delete('/api/persons/:id', (req, res) => {
   res.status(204).end()
 })
 
-// STEP 3.5 & 3.6 - lisää uusi henkilö + validointi
+// Lisää uusi henkilö
 app.post('/api/persons', (req, res) => {
   const body = req.body
 
-  // Tarkistetaan, että nimi ja numero löytyvät
+  // Nimi tai numero puuttuu
   if (!body.name || !body.number) {
     return res.status(400).json({
       error: 'name or number missing'
     })
   }
 
-  // Tarkistetaan, ettei nimi ole jo käytössä
+  // Nimi on jo käytössä
   const nameExists = persons.some(person => person.name === body.name)
 
   if (nameExists) {
@@ -90,7 +91,6 @@ app.post('/api/persons', (req, res) => {
     })
   }
 
-  // Luodaan uusi henkilö
   const person = {
     id: generateId(),
     name: body.name,

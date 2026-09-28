@@ -9,6 +9,7 @@ const PORT = 3001
 app.use(express.json())
 app.use(cors())
 app.use(morgan('tiny'))
+app.use(express.static('dist'))
 
 const persons = [
   { id: 1, name: 'Ada Lovelace', number: '39-44-5323523' },
